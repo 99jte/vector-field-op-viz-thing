@@ -1,0 +1,61 @@
+<html>
+<head>
+<script>
+function init() {
+	const canvas = document.querySelector("canvas");
+	const ctx = canvas.getContext("2d");	
+	image = new Image();
+	image.src = "file:///tmp/arrow.png";
+
+
+
+	function hypotenuse(a, b) {
+		return Math.sqrt(a * a + b * b);
+	}
+
+	function electric_force(x, y, charge_x, charge_y, charge) {
+		let magnitude = hypotenuse(x - charge_x, y - charge_y);
+		let coeff = charge / Math.pow(magnitude, 3);
+		return [coeff* (charge_x - x), coeff * (charge_y - y)];
+	}
+
+	function v(x, y) {
+		let a = electric_force(x, y, 800, 604, 1);
+		let b = electric_force(x, y, 400, 604, -1);
+		return [a[0] + b[0], a[1] + b[1]];
+	}
+
+	image.onload = () => {
+		createImageBitmap(image, {resizeWidth: 30, resizeHeight: 100}).then((imag => {
+			for (let i = 0; i < canvas.width; i += 70) {
+				for (let j = 0; j < canvas.height; j += 70) {
+					let vector = v(i, j);
+					let a = Math.atan2(vector[1], vector[0]) + Math.PI / 2;
+					let m = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+					console.log(m);
+					ctx.setTransform(1, 0, 0, 1, i, j);
+					ctx.transform(Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0);
+					ctx.transform(1, 0, 0, m * 10000, 0, 0);
+					ctx.transform(1, 0, 0, 1, -15, 0);
+					ctx.drawImage(imag, 0, 0);
+					console.log(ctx.getTransform())
+				}
+			}
+		}));
+	};
+	
+};
+
+
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</head>
+<body>
+<canvas width="1200" height="1200">
+  An alternative text describing what your canvas displays.
+</canvas>
+
+</body>
+</html>
