@@ -1,3 +1,4 @@
+<!DOCTYPE html><html lang="en">
 <html>
 <head>
 <script>
@@ -5,7 +6,7 @@ function init() {
 	const canvas = document.querySelector("canvas");
 	const ctx = canvas.getContext("2d");	
 	image = new Image();
-	image.src = "file:///tmp/arrow.png";
+	image.src = "arrow.png";
 
 
 
@@ -25,23 +26,32 @@ function init() {
 		return [a[0] + b[0], a[1] + b[1]];
 	}
 
-	image.onload = () => {
-		createImageBitmap(image, {resizeWidth: 30, resizeHeight: 100}).then((imag => {
+	image.onload = async () => {
+		const imag = await createImageBitmap(image, {resizeWidth: 30, resizeHeight: 100});
+		
+		function draw() {
+			canvas.width = window.innerWidth; 
+			canvas.height = window.innerHeight; 
+
 			for (let i = 0; i < canvas.width; i += 70) {
 				for (let j = 0; j < canvas.height; j += 70) {
 					let vector = v(i, j);
-					let a = Math.atan2(vector[1], vector[0]) + Math.PI / 2;
-					let m = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+					let a = Math.atan2(vector[1], vector[0]) + Math.PI / 2; // + PI/2 to rotate the image so the arrow points the right way
+					let m = hypotenuse(vector[0], vector[1]);
 					console.log(m);
-					ctx.setTransform(1, 0, 0, 1, i, j);
+					ctx.setTransform(1, 0, 0, 1, i, j); // Offset to the maasurment point
 					ctx.transform(Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0);
-					ctx.transform(1, 0, 0, m * 10000, 0, 0);
-					ctx.transform(1, 0, 0, 1, -15, 0);
+					ctx.transform(1, 0, 0, m * 10000, 0, 0); // Stretch the arrow in accordance with the field magnitude at that point
+					ctx.transform(1, 0, 0, 1, -15, 0); // Put the base of the arrow at the origin
 					ctx.drawImage(imag, 0, 0);
 					console.log(ctx.getTransform())
 				}
 			}
-		}));
+		}
+		
+		window.addEventListener('resize', draw, false);
+		
+		draw();
 	};
 	
 };
@@ -49,11 +59,10 @@ function init() {
 
 
 document.addEventListener('DOMContentLoaded', init);
-
 </script>
 </head>
-<body>
-<canvas width="1200" height="1200">
+<body style="margin: 0;">
+<canvas width="1200" height="1200" style="display: block;">
   An alternative text describing what your canvas displays.
 </canvas>
 
