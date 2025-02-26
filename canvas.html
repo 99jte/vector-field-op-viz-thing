@@ -7,23 +7,46 @@ function init() {
 	const ctx = canvas.getContext("2d");	
 	image = new Image();
 	image.src = "arrow.png";
+	
+	 // How much spacing there is between the vectors that hold the user input, from which others will be extrapolated
+	const MEMORIZED_VECTORS_SPACING = 10;
+	// Coords are divided by MEMORIZED_VECTORS_SPACING before going into here as keys
+	const memorized_vectors = new Map();
 
-
+	function get_mem(x, y) {
+		console.assert(Number.isSafeInteger(x) && x >>> 16 === 0);
+		console.assert(Number.isSafeInteger(y) && y >>> 16 === 0);
+		return memorized_vectors.get((x << 16 | y)) ?? [0, 0];
+	}
+	
 
 	function hypotenuse(a, b) {
 		return Math.sqrt(a * a + b * b);
 	}
-
-	function electric_force(x, y, charge_x, charge_y, charge) {
-		let magnitude = hypotenuse(x - charge_x, y - charge_y);
-		let coeff = charge / Math.pow(magnitude, 3);
-		return [coeff* (charge_x - x), coeff * (charge_y - y)];
+	
+	// returns "vt" (value target)
+	function linear_interpolate(p1, p2, pt, v1, v2) {
+		if (p1 == p2) {
+			console.assert(v1 == v2);
+			return v1;
+		}
+		console.assert(p1 <= pt && pt <= p2);
+		let alpha = (pt - p1) / (p2 - p1);
+		console.log([pt, p1, p2]);
+		return alpha * v2 + (1 - alpha) * v1;
 	}
 
 	function v(x, y) {
-		let a = electric_force(x, y, 800, 604, 1);
-		let b = electric_force(x, y, 400, 604, -1);
-		return [a[0] + b[0], a[1] + b[1]];
+		// Find the memorized vectors in the 4 corners (or possibly less if directly on an integer, ie if ceiling = floor)
+		// Transform them to memorized-space
+		x = x / 5;
+		y = y / 5;
+		// Bilinear interpolation
+		return [0, 1].map((dim) => {
+			let bottom_v = linear_interpolate(Math.floor(x), Math.ceil(x), x, get_mem(Math.floor(x), Math.floor(y))[dim], get_mem(Math.ceil(x), Math.floor(y))[dim]);
+			let top_v = linear_interpolate(Math.floor(x), Math.ceil(x), x, get_mem(Math.floor(x), Math.ceil(y))[dim], get_mem(Math.ceil(x), Math.ceil(y))[dim]);
+			return linear_interpolate(Math.floor(y), Math.ceil(y), y, bottom_v, top_v);
+		});
 	}
 
 	image.onload = async () => {
